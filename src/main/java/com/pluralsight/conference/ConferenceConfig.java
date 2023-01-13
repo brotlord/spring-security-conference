@@ -17,6 +17,7 @@ import java.util.Locale;
 @Configuration
 public class ConferenceConfig implements WebMvcConfigurer {
 
+
     @Override
     public void addViewControllers(final ViewControllerRegistry registry) {
         registry.addViewController("/login");

@@ -19,31 +19,21 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity (
-   prePostEnabled = true,
-   securedEnabled = true,
-   jsr250Enabled = true
-)
 public class ConferenceSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private DataSource dataSource;
 
-    @Autowired
-    private ConferenceUserDetailsContextMapper ctxMapper;
-
     @Override
-    protected void configure(final HttpSecurity http) throws Exception {
-        http
+    protected void configure(final HttpSecurity httpSecurity) throws Exception{
+        httpSecurity
                 .authorizeRequests()
-                //.antMatchers("/admin/**").hasRole("ADMIN")
                 .antMatchers("/anonymous*").anonymous()
                 .antMatchers("/login*").permitAll()
-                .antMatchers("/account*").permitAll()
-                .antMatchers("/password*").permitAll()
-                .antMatchers("/assets/css/**", "assets/js/**", "/images/**").permitAll()
+                .antMatchers("/assets/css/**", "/assets/js/**", "/images/**").permitAll()
                 .antMatchers("/index*").permitAll()
                 .anyRequest().authenticated()
+
 
                 .and()
                 .formLogin()
@@ -56,20 +46,17 @@ public class ConferenceSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .rememberMe()
                 .key("superSecretKey")
-                .tokenRepository(tokenRepository())
-
-                .and()
-                .logout()
-                .logoutSuccessUrl("/login?logout=true")
-                .logoutRequestMatcher(new AntPathRequestMatcher("/perform_logout", "GET"))
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll();
+                .tokenRepository(tokenRepository());
 
     }
 
+    /**
+     * Ofc need a table that will store the reference from the cookie from the users local machine to tell the service that
+     * they are still logged in. If table record gets deleted, user must log in again
+     * @return
+     */
     @Bean
-    public PersistentTokenRepository tokenRepository () {
+    public PersistentTokenRepository tokenRepository() {
         JdbcTokenRepositoryImpl token = new JdbcTokenRepositoryImpl();
         token.setDataSource(dataSource);
         return token;
@@ -77,31 +64,20 @@ public class ConferenceSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
-        //auth.inMemoryAuthentication()
-        //        .withUser("bryan").password(passwordEncoder().encode("pass")).roles("USER");
-        auth.jdbcAuthentication()
-                .dataSource(dataSource)
-                .passwordEncoder(passwordEncoder());
-
-        /*
+     //   auth.jdbcAuthentication().dataSource(dataSource);
         auth.ldapAuthentication()
                 .userDnPatterns("uid={0},ou=people")
                 .groupSearchBase("ou=groups")
                 .contextSource()
-                .url("ldap://localhost:8389/dc=pluralsight,dc=com")
+                .url("ldap://localhost:8389/dc_pluralsight,dc=com")
                 .and()
                 .passwordCompare()
                 .passwordEncoder(passwordEncoder())
-                .passwordAttribute("userPassword")
-                .and()
-                .userDetailsContextMapper(ctxMapper);
-                */
-
+                .passwordAttribute("userPassword");
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
